@@ -1,0 +1,50 @@
+
+
+### model for shrinking population trend estimates based on 
+## breeding biome (group1) and wintering biome (group2)
+
+## required data
+## varhat = estaimtes of the variance of the trend estimates for each species
+## betahat = estimates of the trends for each species
+## nspecies = number of species
+## ngroups1 = number of breeding biome groups
+## ngroups2 = number of wintering biome groups
+## group1 = vector of breeding biome indices for each species
+## group2 = vector of wintering biome indices for each species
+## 
+
+model{
+
+for(s in 1:nspecies) {
+  tau.betahat[s] <- 1/varhat[s] #transform variance to precision
+	betahat[s] ~ dnorm(beta[s],tau.betahat[s] ) #betahat = data = trend estimates, tau.betahat = data = precision of trend estimate
+
+ grp1[s,group1[s]] ~ dnorm(mu_grp1[group1[s]],tau_g1[group1[s]]) #random effect
+ grp2[s,group2[s]] ~ dnorm(mu_grp2[group2[s]],tau_g2[group2[s]]) #random effect
+
+  beta[s] <- grp1[s,group1[s]]+grp2[s,group2[s]] #shrunken trends
+
+} # end of s loop
+
+
+for(g in 1:ngroups1){
+mu_grp1[g] ~ dnorm(0,0.1) #fixed effect mean for group
+sd_g1[g] ~ dnorm(0,0.1) T(0,) #sd of species trends within group
+tau_g1[g] <- 1/pow(sd_g1[g],2) #precision of above
+}
+
+for(g in 1:ngroups2){
+mu_grp2[g] ~ dnorm(0,0.1) #fixed effect mean for group
+sd_g2[g] ~ dnorm(0,0.1) T(0,) #sd of species trends within group
+tau_g2[g] <- 1/pow(sd_g2[g],2) #precision of above
+}
+
+
+
+
+
+
+
+} # end of model
+
+   
