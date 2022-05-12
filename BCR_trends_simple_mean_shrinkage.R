@@ -1,6 +1,4 @@
-### Script to generate regularized estimates of BCR population trends using the
-### grouping structures from the Rosenberg et al 2019 paper
-### Breeding and wintering biome
+### Script to generate regularized estimates of BCR population trends 
 
 ### includes downloaded 2019 BBS trends from usgs trends website: https://www.mbr-pwrc.usgs.gov/
 ## two downloaded files
