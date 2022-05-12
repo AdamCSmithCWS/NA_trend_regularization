@@ -21,7 +21,10 @@ source("Functions/posterior_summary_functions.R")
 tbcr <- read.csv("data/BBS_1966-2019_core_best_trend.csv")
 #remove the "all forms" qualification from the lumped BBS species
 tbcr <- tbcr %>% 
-  mutate(Species.Name = gsub(x = trimws(Species.Name),pattern = " (all forms)",replacement = "",fixed = TRUE))
+  mutate(Species.Name = gsub(x = trimws(Species.Name),pattern = " (all forms)",replacement = "",fixed = TRUE),
+         Credibility.Code = factor(trimws(Credibility.Code),ordered = TRUE,
+                                   levels = c("","Y","R"),
+                                   labels = c("G","Y","R")))
 
 ### funciton to transform %-change trends to log-scale geometric mean rates of change
 log_trans <- function(x){
@@ -95,6 +98,9 @@ sd <- 1/pow(tau,0.5) #precision of above
 trend_comp = "models/trend_shrinkage_model_simple.txt"
 cat(modl,file = trend_comp)   
 
+
+
+
 pdf("BCR_trend_shrinkage.pdf")
 
 out_trends <- NULL
@@ -148,8 +154,8 @@ out = jagsUI(data = jags_data,
 
 
 betas_summary <- as.data.frame(out$summary[paste0("beta[",1:jags_data$nspecies,"]"),])
-hist(betas_summary$Rhat)
-hist(betas_summary$n.eff)
+# hist(betas_summary$Rhat)
+# hist(betas_summary$n.eff)
 
 
 
@@ -162,30 +168,40 @@ beta_samples <- posterior_samples(out$samples,
 
 sps <- data.frame(Species.Name = dat$Species.Name,
                   sp = 1:nrow(dat))
-new_trends <- beta_samples %>% group_by(sp) %>% 
-  summarise(new_trend = mean((exp(.value)-1)*100),
-            new_trend_lci = quantile((exp(.value)-1)*100,0.025),
-            new_trend_uci = quantile((exp(.value)-1)*100,0.975)) %>% 
+shrunk_trends <- beta_samples %>% group_by(sp) %>% 
+  summarise(shrunk_trend = mean((exp(.value)-1)*100),
+            shrunk_trend_lci = quantile((exp(.value)-1)*100,0.025),
+            shrunk_trend_uci = quantile((exp(.value)-1)*100,0.975)) %>% 
   left_join(.,sps,by = "sp") %>% 
   left_join(.,dat,by = "Species.Name") %>% 
-  mutate(t_shrink = abs(new_trend - Trend))
+  mutate(t_shrink = abs(shrunk_trend - Trend),
+         Half_CI_Width_original = (X97.5.CI-X2.5.CI)/2)
 
-labl <- new_trends %>% 
-  filter(t_shrink > 2)
+labl <- shrunk_trends %>% 
+  filter(t_shrink > 2.5)
 
-comp_plot <- ggplot(data = new_trends,aes(x = Trend,y = new_trend))+
-  geom_point(aes(size = var_trend,colour = Credibility.Code))+
-  coord_cartesian(xlim = c(-15,20),ylim = c(-15,20))+
+comp_plot <- ggplot(data = shrunk_trends,aes(x = Trend,y = shrunk_trend))+
+  geom_point(aes(colour = Credibility.Code))+
+  geom_errorbarh(data = labl,
+                aes(y = shrunk_trend,xmin = X2.5.CI,xmax = X97.5.CI),
+                alpha = 0.1,height = 0)+
+  coord_cartesian(xlim = c(-15,20),ylim = c(-5,5))+
   geom_abline(slope = 1,intercept = 0,alpha = 0.2)+
+  scale_size_continuous(range = c(1,3),
+                        trans = scales::trans_new("sd_prec",
+                                                  transform = function(x){1/(x^2)},
+                                                  inverse = function(x){1/(x^0.5)}))+
   geom_text_repel(data = labl,
-                  aes(x = Trend,y = new_trend,
-                      label = Species.Name,
-                      size = t_shrink),
+                  aes(x = Trend,y = shrunk_trend,
+                      label = Species.Name),
                   inherit.aes = FALSE,
-                  min.segment.length = 0)+
-  scale_size_continuous(range = c(2,4))+
-  scale_colour_viridis_d(end = 0.9)+
-  labs(title = bcr)+
+                  min.segment.length = 0,
+                  size = 4,
+                  direction = "both",
+                  nudge_x = 3)+
+scale_colour_viridis_d(end = 0.9)+
+  labs(title = bcr,
+       subtitle = "labeled species trends shrink > 2%/year and show error bars")+
   xlab("Original Trend Estimate")+
   ylab("Posterior (shrunk) Trend Estimate")+
   theme_classic()
@@ -194,7 +210,7 @@ print(comp_plot)
 
 
 
-out_trends <- bind_rows(out_trends,new_trends)
+out_trends <- bind_rows(out_trends,shrunk_trends)
 
 print(round(i/nrow(regs),2))
 }
