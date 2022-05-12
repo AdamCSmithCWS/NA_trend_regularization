@@ -16,7 +16,7 @@ rosen = read.csv("data/Rosenberg et al species list.csv")
 log_trans <- function(x){
   log((x/100)+1)
 }
-## transforming the 95% CIs into an estimate of variance
+## transforming the 95% CIs into an estimate of variance fo the trend estimate
 log_var_func <- function(uci,lci){
   ((log_trans(uci)-log_trans(lci))/(1.96*2))^2
 }

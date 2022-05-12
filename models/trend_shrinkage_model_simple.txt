@@ -1,0 +1,37 @@
+
+
+### model for shrinking population trend estimates towards a global mean
+
+## required data
+## varhat = log-scale estaimtes of the variance of the trend estimates for each species
+## betahat = log-scale estimates of the trends for each species
+## nspecies = number of species
+
+
+model{
+
+for(s in 1:nspecies) {
+  tau.betahat[s] <- 1/varhat[s] #transform variance to precision
+	betahat[s] ~ dnorm(beta[s],tau.betahat[s] ) #betahat = data = trend estimates, tau.betahat = data = precision of trend estimate
+
+ beta[s] ~ dnorm(mu,tau) #
+
+} # end of s loop
+
+
+mu ~ dnorm(0,0.5) #fixed effect mean for group
+tau ~ dgamma(2,0.01)
+sd <- 1/pow(tau,0.5) #precision of above
+
+
+
+
+
+
+
+
+
+
+} # end of model
+
+   
