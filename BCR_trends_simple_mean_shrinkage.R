@@ -185,7 +185,7 @@ comp_plot <- ggplot(data = shrunk_trends,aes(x = Trend,y = shrunk_trend))+
   geom_errorbarh(data = labl,
                 aes(y = shrunk_trend,xmin = X2.5.CI,xmax = X97.5.CI),
                 alpha = 0.1,height = 0)+
-  coord_cartesian(xlim = c(-15,20),ylim = c(-5,5))+
+  coord_cartesian(xlim = c(-15,20))+
   geom_abline(slope = 1,intercept = 0,alpha = 0.2)+
   scale_size_continuous(range = c(1,3),
                         trans = scales::trans_new("sd_prec",
@@ -201,7 +201,7 @@ comp_plot <- ggplot(data = shrunk_trends,aes(x = Trend,y = shrunk_trend))+
                   nudge_x = 3)+
 scale_colour_viridis_d(end = 0.9)+
   labs(title = bcr,
-       subtitle = "labeled species trends shrink > 2%/year and show error bars")+
+       caption = "Labeled species trends shrink > 2%/year and show error bars.\n Distance from 1:1 diagonal line reflects shrinkage")+
   xlab("Original Trend Estimate")+
   ylab("Posterior (shrunk) Trend Estimate")+
   theme_classic()
