@@ -217,6 +217,15 @@ print(round(i/nrow(regs),2))
 
 dev.off()
 
+tren <- out_trends %>% 
+  select(Species.Name, AOU, Region, Region.Name,
+         shrunk_trend,shrunk_trend_lci,shrunk_trend_uci,
+         Trend,X2.5.CI,X97.5.CI) %>% 
+  rename(Original_Trend = Trend,
+         Original_Trend_lci = X2.5.CI,
+         Original_Trend_uci = X97.5.CI) %>% 
+  arrange(Region.Name,AOU)
 
-
-
+write.csv(tren,
+          file = "Shrunken_trends_BBS_by_BCR_global_mean.csv",
+          row.names = FALSE)
